@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คำนวณยอดขาย</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Noto Sans Thai',sans-serif;background:#f4f4f4;color:#222}
+
+        .top{background:#fff;border-bottom:1px solid #e0e0e0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+        .top h1{font-size:17px;font-weight:700}
+        .top h1 span{color:#e67e22}
+        .hdr-r{display:flex;align-items:center;gap:8px}
+        .conn{font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px;display:flex;align-items:center;gap:5px}
+        .conn.on{background:#e8f5e9;color:#2e7d32}
+        .conn.off{background:#fff3e0;color:#e65100}
+        .conn-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+        .btn{padding:8px 14px;border-radius:8px;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+        .btn-o{background:#e67e22;color:#fff}
+        .btn-o:hover{background:#d35400}
+        .btn-g{background:#f0f0f0;color:#555}
+        .btn-g:hover{background:#e4e4e4}
+        .btn-r{background:#fff0f0;color:#e74c3c}
+        .btn-r:hover{background:#ffe0e0}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+
+        .wrap{max-width:700px;margin:0 auto;padding:16px}
+
+        .card{background:#fff;border:1px solid #e8e8e8;border-radius:10px;margin-bottom:14px}
+        .card-h{padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+        .card-h .sub{font-weight:400;font-size:12px;color:#aaa}
+        .card-b{padding:16px}
+
+        .form-row{display:flex;gap:10px;align-items:end}
+        .f{flex:1;display:flex;flex-direction:column;gap:4px}
+        .f label{font-size:11px;color:#888;font-weight:600}
+        .f input{padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;outline:none;width:100%}
+        .f input:focus{border-color:#e67e22}
+
+        /* Chips */
+        .chip-area{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+        .chip{border:1px solid #e0e0e0;border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .15s;background:#fafafa;position:relative;min-width:100px}
+        .chip:hover{border-color:#e67e22}
+        .chip.on{border-color:#e67e22;background:#fff7ed}
+        .chip .ck{position:absolute;top:7px;right:8px;width:18px;height:18px;border-radius:50%;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:all .15s}
+        .chip.on .ck{background:#e67e22;border-color:#e67e22}
+        .chip .cn{font-size:13px;font-weight:600;padding-right:26px}
+        .chip .cc{font-size:11px;color:#e74c3c;margin-top:2px}
+        .chip .cd{position:absolute;bottom:5px;right:8px;background:none;border:none;color:#ddd;cursor:pointer;font-size:11px;display:none}
+        .chip:hover .cd{display:block;color:#e74c3c}
+        .empty-msg{text-align:center;padding:28px;color:#ccc;font-size:13px}
+        .loading-msg{text-align:center;padding:20px;color:#aaa;font-size:13px}
+
+        /* Breakdown */
+        .bd{margin-top:14px}
+        .bd-t{font-size:12px;font-weight:700;color:#888;margin-bottom:8px}
+        .bd-table{width:100%;border-collapse:collapse;font-size:13px}
+        .bd-table td{padding:7px 0;border-bottom:1px solid #f0f0f0}
+        .bd-table td:last-child{text-align:right;font-weight:600}
+        .bd-table .total td{border-top:2px solid #e67e22;border-bottom:none;font-size:14px;font-weight:700;padding-top:10px}
+        .bd-table .total td:last-child{color:#e67e22}
+
+        /* Sell */
+        .sell-box{background:#fffaf3;border:1px solid #f5deb3;border-radius:10px;padding:16px;margin-top:14px}
+        .sell-box label{font-size:12px;font-weight:700;color:#b8860b;margin-bottom:6px;display:block}
+        .sell-input{width:100%;padding:12px 14px;border:2px solid #e67e22;border-radius:8px;font-size:18px;font-family:inherit;outline:none;font-weight:700;text-align:center}
+        .sell-input:focus{box-shadow:0 0 0 3px rgba(230,126,34,0.15)}
+
+        /* Result */
+        .res-box{margin-top:16px;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden}
+        .res-t{padding:10px 16px;background:#fafafa;border-bottom:1px solid #eee;font-size:13px;font-weight:700;color:#555}
+        .res-rows{padding:0 16px}
+        .res-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+        .res-row:last-child{border-bottom:none}
+        .res-row .rl{color:#666}
+        .res-row .rv{font-weight:700}
+        .res-big{padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+        .res-big.ok{background:#f0fdf4;border-top:2px solid #22c55e}
+        .res-big.no{background:#fef2f2;border-top:2px solid #ef4444}
+        .res-big .rl{font-size:15px;font-weight:700}
+        .res-big .rv{font-size:24px;font-weight:700}
+        .res-big.ok .rv{color:#22c55e}
+        .res-big.no .rv{color:#ef4444}
+
+        .act-row{margin-top:14px;display:flex;gap:8px}
+
+        /* History */
+        .h-item{border-bottom:1px solid #f0f0f0;padding:12px 16px}
+        .h-item:last-child{border-bottom:none}
+        .h-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+        .h-date{font-size:11px;color:#aaa}
+        .h-profit{font-size:14px;font-weight:700}
+        .h-detail{font-size:12px;color:#888;line-height:1.8}
+        .h-detail b{color:#555;font-weight:600}
+
+        /* Modal */
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:center;justify-content:center}
+        .overlay.show{display:flex}
+        .modal{background:#fff;border-radius:12px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto}
+        .modal-hd{padding:16px 20px;border-bottom:1px solid #eee;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+        .modal-bd{padding:16px 20px}
+        .modal-ft{padding:12px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px}
+        .modal-x{background:none;border:none;font-size:20px;cursor:pointer;color:#999}
+        .hint{background:#fffbf0;border:1px solid #f5deb3;border-radius:8px;padding:12px;font-size:12px;color:#b8860b;margin-bottom:14px;line-height:1.8}
+        .step{display:flex;gap:10px;margin-bottom:12px}
+        .step-n{width:24px;height:24px;min-width:24px;border-radius:7px;background:#fff3e0;color:#e67e22;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+        .step-t{font-size:12px;color:#555;line-height:1.6}
+        .step-t code{background:#fff3e0;color:#e67e22;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600}
+
+        .toast{position:fixed;bottom:16px;right:16px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:200;animation:fadeIn .2s ease,fadeOut .2s ease 2.7s forwards}
+        .toast.ok{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+        .toast.err{background:#ffebee;color:#c62828;border:1px solid #ffcdd2}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeOut{to{opacity:0;transform:translateY(10px)}}
+
+        @media(max-width:600px){
+            .form-row{flex-direction:column}
+            .chip-area{gap:6px}
+            .chip{flex:1;min-width:45%}
+            .hdr-r .conn span{display:none}
+        }
+    </style>
+</head>
+<body>
+
+<div class="top">
+    <h1>🧾 <span>คำนวณ</span>ยอดขาย</h1>
+    <div class="hdr-r">
+        <div class="conn off" id="connBadge"><div class="conn-dot"></div><span id="connTxt">ยังไม่เชื่อมต่อ</span></div>
+        <button class="btn btn-g" onclick="openCfg()">⚙ ตั้งค่า</button>
+    </div>
+</div>
+
+<div class="wrap">
+
+    <!-- ① สินค้า & ต้นทุน -->
+    <div class="card">
+        <div class="card-h">📦 สินค้า & ต้นทุน <span class="sub" id="pCount"></span></div>
+        <div class="card-b">
+            <div class="form-row">
+                <div class="f"><label>ชื่อสินค้า</label><input id="pName" placeholder="เช่น สินค้า A"></div>
+                <div class="f" style="max-width:140px"><label>ต้นทุน (฿)</label><input id="pCost" type="number" placeholder="0" min="0"></div>
+                <button class="btn btn-o" id="addBtn" onclick="addProd()" style="height:38px;white-space:nowrap;align-self:end">+ เพิ่ม</button>
+            </div>
+            <div class="chip-area" id="chipList"></div>
+        </div>
+    </div>
+
+    <!-- ② เลือกสินค้า & คำนวณ -->
+    <div class="card">
+        <div class="card-h">🛒 เลือกสินค้า & กรอกราคาขาย</div>
+        <div class="card-b">
+            <p style="font-size:12px;color:#aaa;margin-bottom:4px">✅ คลิกเลือกสินค้าด้านบน → กรอกราคาโปรโมชั่น</p>
+
+            <!-- รายละเอียดต้นทุน -->
+            <div class="bd" id="bdArea" style="display:none">
+                <div class="bd-t">📋 รายละเอียดต้นทุนที่เลือก</div>
+                <table class="bd-table"><tbody id="bdBody"></tbody></table>
+            </div>
+
+            <!-- ราคาขาย -->
+            <div class="sell-box">
+                <label>💰 ราคาขาย / โปรโมชั่น (฿)</label>
+                <input class="sell-input" id="sellPrice" type="number" placeholder="กรอกราคาที่ต้องการขาย" min="0" oninput="calc()">
+            </div>
+
+            <!-- ผลลัพธ์ -->
+            <div class="res-box" id="resBox" style="display:none">
+                <div class="res-t">🧮 รายละเอียดการคำนวณ</div>
+                <div class="res-rows" id="resRows"></div>
+                <div class="res-big ok" id="resBig">
+                    <span class="rl">กำไรสุทธิ</span>
+                    <span class="rv" id="resProfit">฿0.00</span>
+                </div>
+            </div>
+
+            <div class="act-row">
+                <button class="btn btn-o" id="saveBtn" onclick="saveOrder()">✓ บันทึกออเดอร์</button>
+                <button class="btn btn-g" onclick="resetOrder()">ล้าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ③ ประวัติ -->
+    <div class="card">
+        <div class="card-h">
+            📜 ประวัติออเดอร์
+            <div style="display:flex;gap:6px">
+                <button class="btn btn-g" style="padding:5px 10px;font-size:11px" onclick="loadHistory()">🔄</button>
+                <button class="btn btn-g" style="padding:5px 10px;font-size:11px" onclick="exportCSV()">📄 CSV</button>
+                <button class="btn btn-r" style="padding:5px 10px;font-size:11px" onclick="clearLocalHist()">ล้าง</button>
+            </div>
+        </div>
+        <div id="histArea">
+            <div class="empty-msg" id="hEmpty">ยังไม่มีประวัติ</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Settings Modal -->
+<div id="cfgModal" class="overlay">
+    <div class="modal">
+        <div class="modal-hd">⚙ ตั้งค่าเชื่อมต่อ Google Sheet <button class="modal-x" onclick="closeCfg()">✕</button></div>
+        <div class="modal-bd">
+            <div class="hint">
+                💡 ใช้ Google Apps Script สร้าง Sheet อัตโนมัติ<br>
+                ไม่ต้องสร้าง API Key หรือตั้งค่าอะไรเยอะ!
+            </div>
+
+            <div class="step">
+                <div class="step-n">1</div>
+                <div class="step-t">ไปที่ <a href="https://sheets.google.com" target="_blank" style="color:#e67e22;font-weight:600">Google Sheets</a> → สร้าง Sheet ใหม่เปล่าๆ</div>
+            </div>
+            <div class="step">
+                <div class="step-n">2</div>
+                <div class="step-t">กด <code>ส่วนขยาย</code> → <code>Apps Script</code></div>
+            </div>
+            <div class="step">
+                <div class="step-n">3</div>
+                <div class="step-t">ลบโค้ดเดิม → วาง <code>Code.gs</code> ที่ดาวน์โหลดไว้ทั้งหมด → กด <b>💾 บันทึก</b></div>
+            </div>
+            <div class="step">
+                <div class="step-n">4</div>
+                <div class="step-t">กดเมนู <code>🧾 SALECALC</code> → <code>สร้าง Sheet อัตโนมัติ</code><br>(ให้สิทธิ์เมื่อถูกถาม)</div>
+            </div>
+            <div class="step">
+                <div class="step-n">5</div>
+                <div class="step-t">กด <code>Deploy</code> → <code>New deployment</code><br>
+                Type: <code>Web app</code> → Execute as: <code>Me</code> → Who has access: <code>Anyone</code><br>
+                กด Deploy → <b>คัดลอก URL</b> มาวางด้านล่าง</div>
+            </div>
+
+            <div class="f" style="margin-top:16px">
+                <label>🔗 Apps Script Web App URL</label>
+                <input id="cfgUrl" placeholder="https://script.google.com/macros/s/AKfycbzaSTg-IMuNAP3NW3Unhb9fnkFvDlfdDCflr7xUZu5IAOsURj3F5P6rPpm-6qKpi8c8/exec">
+            </div>
+        </div>
+        <div class="modal-ft">
+            <button class="btn btn-g" onclick="closeCfg()">ยกเลิก</button>
+            <button class="btn btn-g" onclick="testConn()">🔄 ทดสอบ</button>
+            <button class="btn btn-o" onclick="saveCfg()">💾 บันทึก & เชื่อมต่อ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== DATA =====
+let prods = JSON.parse(localStorage.getItem('sp2') || '[]');
+let sel = new Set();
+let hist = JSON.parse(localStorage.getItem('sh2') || '[]');
+let appUrl = localStorage.getItem('appUrl') || '';
+const VAT = 0.07;
+
+// ===== INIT =====
+function init() {
+    document.getElementById('cfgUrl').value = appUrl;
+    updateConn();
+    renderChips();
+    renderHist();
+    if (appUrl) loadProducts();
+}
+
+function updateConn() {
+    const b = document.getElementById('connBadge');
+    const t = document.getElementById('connTxt');
+    if (appUrl) { b.className = 'conn on'; t.textContent = 'เชื่อมต่อแล้ว'; }
+    else { b.className = 'conn off'; t.textContent = 'ยังไม่เชื่อมต่อ'; }
+}
+
+// ===== API =====
+async function api(method, params) {
+    if (!appUrl) return null;
+    try {
+        if (method === 'GET') {
+            const url = appUrl + '?' + new URLSearchParams(params).toString();
+            const r = await fetch(url);
+            return await r.json();
+        } else {
+            const r = await fetch(appUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(params)
+            });
+            return await r.json();
+        }
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+// ===== PRODUCTS =====
+async function addProd() {
+    const n = document.getElementById('pName').value.trim();
+    const c = parseFloat(document.getElementById('pCost').value);
+    if (!n) return msg('กรุณากรอกชื่อสินค้า', 0);
+    if (!c || c < 0) return msg('กรุณากรอกต้นทุน', 0);
+
+    // Save local
+    prods.push({ id: Date.now(), name: n, cost: c });
+    localStorage.setItem('sp2', JSON.stringify(prods));
+    document.getElementById('pName').value = '';
+    document.getElementById('pCost').value = '';
+    renderChips();
+    msg('เพิ่ม "' + n + '" แล้ว', 1);
+
+    // Sync to sheet
+    if (appUrl) {
+        await api('POST', { action: 'addProduct', name: n, cost: c });
+    }
+}
+
+async function delProd(id) {
+    const p = prods.find(x => x.id === id);
+    prods = prods.filter(x => x.id !== id);
+    sel.delete(id);
+    localStorage.setItem('sp2', JSON.stringify(prods));
+    renderChips(); renderBD(); calc();
+
+    if (appUrl && p) {
+        await api('POST', { action: 'deleteProduct', name: p.name });
+    }
+}
+
+function toggle(id) {
+    if (sel.has(id)) sel.delete(id); else sel.add(id);
+    renderChips(); renderBD(); calc();
+}
+
+async function loadProducts() {
+    const res = await api('GET', { action: 'getProducts' });
+    if (res && res.products && res.products.length > 0) {
+        prods = res.products.map(p => ({ id: p.id || Date.now() + Math.random(), name: p.name, cost: p.cost }));
+        localStorage.setItem('sp2', JSON.stringify(prods));
+        renderChips();
+    }
+}
+
+function renderChips() {
+    const el = document.getElementById('chipList');
+    document.getElementById('pCount').textContent = prods.length ? prods.length + ' รายการ' : '';
+    if (!prods.length) {
+        el.innerHTML = '<div class="empty-msg" style="width:100%;padding:20px">เพิ่มสินค้าเพื่อเริ่มต้น</div>';
+        return;
+    }
+    el.innerHTML = prods.map(p => {
+        const on = sel.has(p.id) ? 'on' : '';
+        return `<div class="chip ${on}" onclick="toggle(${p.id})">
+            <div class="ck">${sel.has(p.id) ? '✓' : ''}</div>
+            <div class="cn">${p.name}</div>
+            <div class="cc">ต้นทุน ฿${p.cost.toFixed(2)}</div>
+            <button class="cd" onclick="event.stopPropagation();delProd(${p.id})">✕ ลบ</button>
+        </div>`;
+    }).join('');
+}
+
+// ===== BREAKDOWN =====
+function renderBD() {
+    const area = document.getElementById('bdArea');
+    const body = document.getElementById('bdBody');
+    const items = prods.filter(p => sel.has(p.id));
+    if (!items.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+
+    let total = 0;
+    let rows = items.map((p, i) => {
+        total += p.cost;
+        return `<tr><td>${i + 1}. ${p.name}</td><td style="color:#e74c3c">฿${p.cost.toFixed(2)}</td></tr>`;
+    }).join('');
+    rows += `<tr class="total"><td>ต้นทุนรวม (${items.length} รายการ)</td><td>฿${total.toFixed(2)}</td></tr>`;
+    body.innerHTML = rows;
+}
+
+// ===== CALC =====
+function calc() {
+    const items = prods.filter(p => sel.has(p.id));
+    const totalCost = items.reduce((s, p) => s + p.cost, 0);
+    const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+
+    const box = document.getElementById('resBox');
+    if (!items.length || !sellPrice) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+
+    const vat = sellPrice * VAT;
+    const afterVat = sellPrice - vat;
+    const profit = afterVat - totalCost;
+
+    document.getElementById('resRows').innerHTML = `
+        <div class="res-row"><span class="rl">ราคาขาย</span><span class="rv" style="color:#3498db">฿${sellPrice.toFixed(2)}</span></div>
+        <div class="res-row"><span class="rl">− VAT 7%</span><span class="rv" style="color:#e67e22">− ฿${vat.toFixed(2)}</span></div>
+        <div class="res-row"><span class="rl">= ยอดหลังหัก VAT</span><span class="rv">฿${afterVat.toFixed(2)}</span></div>
+        <div class="res-row"><span class="rl">− ต้นทุนรวม (${items.length} รายการ)</span><span class="rv" style="color:#e74c3c">− ฿${totalCost.toFixed(2)}</span></div>
+    `;
+
+    const big = document.getElementById('resBig');
+    big.className = 'res-big ' + (profit >= 0 ? 'ok' : 'no');
+    document.getElementById('resProfit').textContent = (profit < 0 ? '− ' : '') + '฿' + Math.abs(profit).toFixed(2);
+}
+
+// ===== SAVE ORDER =====
+async function saveOrder() {
+    const items = prods.filter(p => sel.has(p.id));
+    if (!items.length) return msg('กรุณาเลือกสินค้า', 0);
+    const sellPrice = parseFloat(document.getElementById('sellPrice').value);
+    if (!sellPrice || sellPrice <= 0) return msg('กรุณากรอกราคาขาย', 0);
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+
+    const totalCost = items.reduce((s, p) => s + p.cost, 0);
+    const vat = sellPrice * VAT;
+    const profit = sellPrice - vat - totalCost;
+    const names = items.map(p => p.name);
+    const costDetail = items.map(p => p.name + ' ฿' + p.cost.toFixed(2)).join(' + ');
+
+    const entry = {
+        date: new Date().toLocaleDateString('th-TH'),
+        time: new Date().toLocaleTimeString('th-TH'),
+        items: names.join(' + '),
+        costDetail,
+        costs: items.map(p => ({ name: p.name, cost: p.cost })),
+        totalCost,
+        sell: sellPrice,
+        vat,
+        profit
+    };
+
+    // Save local
+    hist.unshift(entry);
+    localStorage.setItem('sh2', JSON.stringify(hist));
+
+    // Save to Sheet
+    if (appUrl) {
+        await api('POST', {
+            action: 'saveOrder',
+            items: entry.items,
+            costDetail: entry.costDetail,
+            totalCost: entry.totalCost,
+            sellPrice: entry.sell,
+            vat: entry.vat,
+            profit: entry.profit
+        });
+    }
+
+    btn.disabled = false; btn.textContent = '✓ บันทึกออเดอร์';
+    resetOrder();
+    renderHist();
+    msg('บันทึกสำเร็จ' + (appUrl ? ' + ส่งลง Sheet แล้ว' : ''), 1);
+}
+
+function resetOrder() {
+    sel.clear();
+    document.getElementById('sellPrice').value = '';
+    document.getElementById('resBox').style.display = 'none';
+    document.getElementById('bdArea').style.display = 'none';
+    renderChips();
+}
+
+// ===== HISTORY =====
+async function loadHistory() {
+    if (!appUrl) return msg('ยังไม่ได้เชื่อมต่อ', 0);
+    const res = await api('GET', { action: 'getHistory' });
+    if (res && res.history) {
+        hist = res.history;
+        localStorage.setItem('sh2', JSON.stringify(hist));
+        renderHist();
+        msg('โหลดประวัติจาก Sheet แล้ว', 1);
+    }
+}
+
+function renderHist() {
+    const area = document.getElementById('histArea');
+    if (!hist.length) {
+        area.innerHTML = '<div class="empty-msg">ยังไม่มีประวัติ</div>';
+        return;
+    }
+    area.innerHTML = hist.map(h => {
+        const pc = h.profit >= 0 ? '#22c55e' : '#ef4444';
+        const pl = h.profit >= 0 ? 'กำไร' : 'ขาดทุน';
+        const cd = h.costDetail || (h.costs ? h.costs.map(c => c.name + ' ฿' + c.cost.toFixed(2)).join(' + ') : '');
+        return `<div class="h-item">
+            <div class="h-top">
+                <span class="h-date">${h.date} ${h.time || ''}</span>
+                <span class="h-profit" style="color:${pc}">${pl} ฿${Math.abs(h.profit).toFixed(2)}</span>
+            </div>
+            <div class="h-detail">
+                <b>สินค้า:</b> ${h.items}<br>
+                <b>ต้นทุน:</b> ${cd} = <span style="color:#e74c3c">฿${h.totalCost.toFixed(2)}</span><br>
+                <b>ราคาขาย:</b> <span style="color:#3498db">฿${h.sell.toFixed(2)}</span>
+                → VAT 7%: <span style="color:#e67e22">฿${h.vat.toFixed(2)}</span>
+                → ${pl}: <span style="color:${pc}">฿${Math.abs(h.profit).toFixed(2)}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function clearLocalHist() {
+    if (!confirm('ล้างประวัติในเครื่อง?')) return;
+    hist = []; localStorage.setItem('sh2', JSON.stringify(hist));
+    renderHist(); msg('ล้างแล้ว', 1);
+}
+
+// ===== CSV =====
+function exportCSV() {
+    if (!hist.length) return msg('ไม่มีข้อมูล', 0);
+    let csv = '\uFEFFวันที่,สินค้า,รายละเอียดต้นทุน,ต้นทุนรวม,ราคาขาย,VAT 7%,กำไร\n';
+    hist.forEach(h => {
+        const cd = h.costDetail || '';
+        csv += `${h.date},"${h.items}","${cd}",${h.totalCost.toFixed(2)},${h.sell.toFixed(2)},${h.vat.toFixed(2)},${h.profit.toFixed(2)}\n`;
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'sales_' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click(); msg('Export สำเร็จ', 1);
+}
+
+// ===== SETTINGS =====
+function openCfg() { document.getElementById('cfgModal').classList.add('show'); }
+function closeCfg() { document.getElementById('cfgModal').classList.remove('show'); }
+
+function saveCfg() {
+    appUrl = document.getElementById('cfgUrl').value.trim();
+    localStorage.setItem('appUrl', appUrl);
+    updateConn(); closeCfg();
+    msg('บันทึกแล้ว', 1);
+    if (appUrl) { loadProducts(); loadHistory(); }
+}
+
+async function testConn() {
+    const url = document.getElementById('cfgUrl').value.trim();
+    if (!url) return msg('กรุณาวาง URL', 0);
+    try {
+        const r = await fetch(url + '?action=ping');
+        const d = await r.json();
+        if (d.ok) msg('เชื่อมต่อสำเร็จ! Sheet: ' + d.name, 1);
+        else msg('เชื่อมต่อไม่สำเร็จ', 0);
+    } catch { msg('เชื่อมต่อไม่ได้', 0); }
+}
+
+// ===== UTILS =====
+function msg(t, ok) {
+    document.querySelectorAll('.toast').forEach(x => x.remove());
+    const d = document.createElement('div');
+    d.className = 'toast ' + (ok ? 'ok' : 'err');
+    d.textContent = t;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 3000);
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.closest('.form-row')) addProd();
+});
+
+init();
+</script>
+</body>
+</html>
